@@ -1,8 +1,8 @@
-// components/TelegramProvider.tsx
 'use client';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-interface TelegramWebApp {
+// Extend the WebApp type to include missing methods
+interface ExtendedTelegramWebApp {
   BackButton: {
     show: () => void;
     hide: () => void;
@@ -18,17 +18,20 @@ interface TelegramWebApp {
   };
   expand: () => void;
   close: () => void;
-  enableClosingConfirmation: () => void;
+  enableClosingConfirmation?: () => void; // optional
+  setHeaderColor?: (color: string) => void;
+  setBackgroundColor?: (color: string) => void;
+  initDataUnsafe?: any;
 }
 
 interface TelegramContextType {
-  webApp: TelegramWebApp | null;
+  webApp: ExtendedTelegramWebApp | null;
   user: any;
 }
 
-const TelegramContext = createContext<TelegramContextType>({ 
-  webApp: null, 
-  user: null 
+const TelegramContext = createContext<TelegramContextType>({
+  webApp: null,
+  user: null
 });
 
 interface TelegramProviderProps {
@@ -36,30 +39,22 @@ interface TelegramProviderProps {
 }
 
 export function TelegramProvider({ children }: TelegramProviderProps) {
-  const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
-  const [user, setUser] = useState(null);
+  const [webApp, setWebApp] = useState<ExtendedTelegramWebApp | null>(null);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      
+      const tg = window.Telegram.WebApp as ExtendedTelegramWebApp;
+
       // Initialize
       tg.expand();
-      tg.enableClosingConfirmation();
-      
-      // Set theme if needed
-      tg.setHeaderColor('#1a1a1a');
-      tg.setBackgroundColor('#1a1a1a');
+      tg.enableClosingConfirmation?.(); // optional chaining
 
-      const webAppObj: TelegramWebApp = {
-        BackButton: tg.BackButton,
-        MainButton: tg.MainButton,
-        expand: tg.expand,
-        close: tg.close,
-        enableClosingConfirmation: tg.enableClosingConfirmation,
-      };
+      // Set theme if available
+      tg.setHeaderColor?.('#1a1a1a');
+      tg.setBackgroundColor?.('#1a1a1a');
 
-      setWebApp(webAppObj);
+      setWebApp(tg);
       setUser(tg.initDataUnsafe?.user);
 
       // Configure Main Button
