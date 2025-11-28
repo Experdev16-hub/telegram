@@ -1,24 +1,24 @@
 'use client';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-// Extend the WebApp type to include missing methods
+// Extended Telegram WebApp type
 interface ExtendedTelegramWebApp {
   BackButton: {
     show: () => void;
     hide: () => void;
     onClick: (callback: () => void) => void;
-    offClick: (callback: () => void) => void;
+    offClick: () => void;
   };
   MainButton: {
     show: () => void;
     hide: () => void;
     setText: (text: string) => void;
     onClick: (callback: () => void) => void;
-    offClick: (callback: () => void) => void;
+    offClick: () => void;
   };
   expand: () => void;
   close: () => void;
-  enableClosingConfirmation?: () => void; // optional
+  enableClosingConfirmation?: () => void;
   setHeaderColor?: (color: string) => void;
   setBackgroundColor?: (color: string) => void;
   initDataUnsafe?: any;
@@ -44,29 +44,55 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp as ExtendedTelegramWebApp;
+      const tg = window.Telegram.WebApp;
 
       // Initialize
       tg.expand();
-      tg.enableClosingConfirmation?.(); // optional chaining
-
-      // Set theme if available
+      tg.enableClosingConfirmation?.();
       tg.setHeaderColor?.('#1a1a1a');
       tg.setBackgroundColor?.('#1a1a1a');
 
-      setWebApp(tg);
+      // Wrap MainButton to match our type
+      const mainButton = {
+        show: tg.MainButton.show.bind(tg.MainButton),
+        hide: tg.MainButton.hide.bind(tg.MainButton),
+        setText: tg.MainButton.setText.bind(tg.MainButton),
+        onClick: tg.MainButton.onClick.bind(tg.MainButton),
+        offClick: tg.MainButton.offClick?.bind(tg.MainButton) || (() => {}),
+      };
+
+      // Wrap BackButton to match our type
+      const backButton = {
+        show: tg.BackButton.show.bind(tg.BackButton),
+        hide: tg.BackButton.hide.bind(tg.BackButton),
+        onClick: tg.BackButton.onClick.bind(tg.BackButton),
+        offClick: tg.BackButton.offClick?.bind(tg.BackButton) || (() => {}),
+      };
+
+      const webAppObj: ExtendedTelegramWebApp = {
+        MainButton: mainButton,
+        BackButton: backButton,
+        expand: tg.expand.bind(tg),
+        close: tg.close.bind(tg),
+        enableClosingConfirmation: tg.enableClosingConfirmation?.bind(tg),
+        setHeaderColor: tg.setHeaderColor?.bind(tg),
+        setBackgroundColor: tg.setBackgroundColor?.bind(tg),
+        initDataUnsafe: tg.initDataUnsafe,
+      };
+
+      setWebApp(webAppObj);
       setUser(tg.initDataUnsafe?.user);
 
       // Configure Main Button
-      tg.MainButton.setText('PLAY NOW');
-      tg.MainButton.show();
+      webAppObj.MainButton.setText('PLAY NOW');
+      webAppObj.MainButton.show();
 
       // Handle back button
-      tg.BackButton.onClick(() => {
+      webAppObj.BackButton.onClick(() => {
         if (window.history.length > 1) {
           window.history.back();
         } else {
-          tg.close();
+          webAppObj.close();
         }
       });
 
