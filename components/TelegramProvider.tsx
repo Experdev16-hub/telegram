@@ -44,7 +44,8 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
+      // Cast to unknown first, then to ExtendedTelegramWebApp
+      const tg = window.Telegram.WebApp as unknown as ExtendedTelegramWebApp;
 
       // Initialize
       tg.expand();
@@ -52,7 +53,7 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
       tg.setHeaderColor?.('#1a1a1a');
       tg.setBackgroundColor?.('#1a1a1a');
 
-      // Wrap MainButton to match our type
+      // Wrap MainButton
       const mainButton = {
         show: tg.MainButton.show.bind(tg.MainButton),
         hide: tg.MainButton.hide.bind(tg.MainButton),
@@ -61,7 +62,7 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
         offClick: tg.MainButton.offClick?.bind(tg.MainButton) || (() => {}),
       };
 
-      // Wrap BackButton to match our type
+      // Wrap BackButton
       const backButton = {
         show: tg.BackButton.show.bind(tg.BackButton),
         hide: tg.BackButton.hide.bind(tg.BackButton),
@@ -87,7 +88,7 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
       webAppObj.MainButton.setText('PLAY NOW');
       webAppObj.MainButton.show();
 
-      // Handle back button
+      // Handle Back button
       webAppObj.BackButton.onClick(() => {
         if (window.history.length > 1) {
           window.history.back();
